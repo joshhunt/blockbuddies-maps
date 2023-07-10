@@ -4,6 +4,7 @@ import { supabase, useSubscription } from "./supabaseClient";
 import { FeatureRow, NewFeatureRow, WorldRow } from "./types";
 import Auth from "./Auth";
 import { Session } from "@supabase/supabase-js";
+import Map from "./Map";
 
 function App() {
   const [selectedWorld, setSelectedWorld] = useState<WorldRow | undefined>(
@@ -115,6 +116,10 @@ function App() {
       <hr />
 
       <Auth session={session} onAuthSession={handleAuthSession} />
+
+      <hr />
+
+      <Map features={allFeatures} />
     </div>
   );
 }
