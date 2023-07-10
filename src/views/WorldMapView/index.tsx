@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   DONT_QUERY,
   supabase,
@@ -26,6 +26,7 @@ export default function WorldMapView({
     [world]
   );
   const allFeatures = useSubscription<FeatureRow>("Feature", featuresFilter);
+  const [addPinError, setAddPinError] = useState<string | null>();
 
   const features = useMemo(() => {
     return allFeatures.filter((f) => f.dimension === dimensionSlug);
@@ -35,7 +36,14 @@ export default function WorldMapView({
     supabase
       .from("Feature")
       .insert(newFeature)
-      .then(() => {});
+      .then(
+        () => {},
+        (error) => {
+          const errorMessage =
+            error?.message || error?.toString?.() || error || "Unknown error";
+          setAddPinError(errorMessage);
+        }
+      );
   }, []);
 
   if (worldError) {
@@ -100,6 +108,7 @@ export default function WorldMapView({
         <div>
           <h3>Add pin</h3>
           <NewFeatureForm world={world} onNewFeature={handleNewFeature} />
+          {addPinError && <p>{addPinError}</p>}
         </div>
       </div>
       <h3>Map</h3>

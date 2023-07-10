@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { useWorlds } from "../../supabaseClient";
 import { Link } from "wouter";
 import { Session } from "@supabase/supabase-js";

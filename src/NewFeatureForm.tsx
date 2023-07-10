@@ -85,7 +85,7 @@ const FieldRow: React.FC<FieldRowProps> = ({ label, fieldName, type }) => {
     <tr>
       <td>{label}</td>
       <td>
-        <input name={fieldName} type={type} />
+        <input name={fieldName} type={type} required />
       </td>
     </tr>
   );
