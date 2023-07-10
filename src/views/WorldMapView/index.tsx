@@ -8,6 +8,7 @@ import {
 import { FeatureRow, NewFeatureRow } from "../../types";
 import Map from "../../Map";
 import NewFeatureForm from "../../NewFeatureForm";
+import { Link } from "wouter";
 
 interface WorldMapViewProps {
   params: {
@@ -50,6 +51,16 @@ export default function WorldMapView({
   return (
     <div>
       <h2>{world.name}</h2>
+      <p>
+        <Link to="/">Home</Link>
+      </p>
+      <p>
+        <Link href={`/${worldSlug}/overworld`}>Overworld</Link>
+        {" / "}
+        <Link href={`/${worldSlug}/nether`}>Nether</Link>
+        {" / "}
+        <Link href={`/${worldSlug}/end`}>The End</Link>
+      </p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
         <div>
           <h3>
