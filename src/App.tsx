@@ -49,6 +49,8 @@ function App() {
 
   return (
     <div>
+      <Map features={allFeatures} />
+
       <ul>
         {worlds.map((world) => {
           const worldEl = (
@@ -118,8 +120,6 @@ function App() {
       <Auth session={session} onAuthSession={handleAuthSession} />
 
       <hr />
-
-      <Map features={allFeatures} />
     </div>
   );
 }

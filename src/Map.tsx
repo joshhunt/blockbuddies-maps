@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { FeatureRow } from "./types";
 import pinImage from "./assets/custom.pin.png";
-
+// @ts-ignore
+import Unmined from "./Unmined.js";
 interface MapProps {
   features: FeatureRow[];
 }
@@ -23,9 +24,7 @@ async function loadFromScript(
 
   const fnSource = `
     ${source}
-
-    return ${exportVar}
-  `;
+    return ${exportVar}`;
 
   const fn = new Function(fnSource); // lmao
   return fn();
@@ -82,15 +81,15 @@ const Map: React.FC<MapProps> = ({ features }) => {
 
       properties.markers = markers;
 
-      const Unmined = await loadFromScript(
-        `${MAP_BASE}unmined.openlayers.js`,
-        "Unmined",
-        (src) =>
-          src.replace(
-            `"tiles/zoom.{z}/{xd}/{yd}/tile.{x}.{y}."`,
-            `"${MAP_BASE}tiles/zoom.{z}/{xd}/{yd}/tile.{x}.{y}."`
-          )
-      );
+      // const Unmined = await loadFromScript(
+      //   `${MAP_BASE}unmined.openlayers.js`,
+      //   "Unmined",
+      //   (src) =>
+      //     src.replace(
+      //       `"tiles/zoom.{z}/{xd}/{yd}/tile.{x}.{y}."`,
+      //       `"${MAP_BASE}tiles/zoom.{z}/{xd}/{yd}/tile.{x}.{y}."`
+      //     )
+      // );
 
       // if (
       //   UnminedCustomMarkers &&
@@ -104,7 +103,7 @@ const Map: React.FC<MapProps> = ({ features }) => {
 
       clearMapEl();
       let unmined = new Unmined();
-      unmined.map(mapElId, properties, regions);
+      unmined.map(mapElId, properties, regions, MAP_BASE);
 
       console.log({
         properties,
