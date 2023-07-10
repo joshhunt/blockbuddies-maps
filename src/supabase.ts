@@ -14,7 +14,7 @@ export interface Database {
           created_at: string | null
           created_by: string | null
           cross_dimension: boolean | null
-          dimension: number
+          dimension: string
           icon: string | null
           id: number
           name: string
@@ -26,7 +26,7 @@ export interface Database {
           created_at?: string | null
           created_by?: string | null
           cross_dimension?: boolean | null
-          dimension: number
+          dimension: string
           icon?: string | null
           id?: number
           name: string
@@ -38,7 +38,7 @@ export interface Database {
           created_at?: string | null
           created_by?: string | null
           cross_dimension?: boolean | null
-          dimension?: number
+          dimension?: string
           icon?: string | null
           id?: number
           name?: string
