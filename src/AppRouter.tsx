@@ -2,9 +2,7 @@ import { Redirect, Route, Switch } from "wouter";
 import HomeView from "./views/HomeView";
 import WorldMapView from "./views/WorldMapView";
 
-interface AppRouterProps {}
-
-export default function AppRouter(props: AppRouterProps) {
+export default function AppRouter() {
   return (
     <Switch>
       <Route path="/" component={HomeView} />

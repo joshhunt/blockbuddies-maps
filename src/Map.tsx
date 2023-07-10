@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { FeatureRow } from "./types";
 import pinImage from "./assets/custom.pin.png";
-import { useRoute } from "wouter";
 import Unmined from "./Unmined";
 
 interface MapProps {
@@ -83,26 +82,6 @@ const Map: React.FC<MapProps> = ({ features, mapBase }) => {
 
       properties.markers = markers;
 
-      // const Unmined = await loadFromScript(
-      //   `${MAP_BASE}unmined.openlayers.js`,
-      //   "Unmined",
-      //   (src) =>
-      //     src.replace(
-      //       `"tiles/zoom.{z}/{xd}/{yd}/tile.{x}.{y}."`,
-      //       `"${MAP_BASE}tiles/zoom.{z}/{xd}/{yd}/tile.{x}.{y}."`
-      //     )
-      // );
-
-      // if (
-      //   UnminedCustomMarkers &&
-      //   UnminedCustomMarkers.isEnabled &&
-      //   UnminedCustomMarkers.markers
-      // ) {
-      //   UnminedMapProperties.markers = UnminedMapProperties.markers.concat(
-      //     UnminedCustomMarkers.markers
-      //   );
-      // }
-
       clearMapEl();
       let unmined = new Unmined();
       unmined.map(mapElId, properties, regions, mapBase);
@@ -113,7 +92,7 @@ const Map: React.FC<MapProps> = ({ features, mapBase }) => {
     return () => {
       clearMapEl();
     };
-  }, [features]);
+  }, [features, mapBase]);
 
   return (
     <div>
