@@ -65,17 +65,23 @@ export interface Database {
         Row: {
           created_at: string | null
           id: number
+          map_base_url: string | null
           name: string | null
+          slug: string
         }
         Insert: {
           created_at?: string | null
           id?: number
+          map_base_url?: string | null
           name?: string | null
+          slug: string
         }
         Update: {
           created_at?: string | null
           id?: number
+          map_base_url?: string | null
           name?: string | null
+          slug?: string
         }
         Relationships: []
       }
