@@ -1,9 +1,11 @@
 import {
+  PostgrestSingleResponse,
   RealtimePostgresChangesPayload,
   createClient,
 } from "@supabase/supabase-js";
 import { Database } from "./supabase";
 import { useEffect, useState } from "react";
+import { WorldRow } from "./types";
 
 function getEnvVar(key: string): string {
   const value: unknown = import.meta.env[key];
@@ -16,6 +18,8 @@ function getEnvVar(key: string): string {
 }
 
 const supabaseUrl = "https://aolkuuzpqnuodyufkogt.supabase.co";
+
+export const DONT_QUERY: unique symbol = Symbol("Don't query :)");
 
 export const supabase = createClient<Database>(
   supabaseUrl,
@@ -46,16 +50,20 @@ export function createSubscription(
 
 interface EqFilter {
   column: string;
-  value: any;
+  value: string | number;
 }
 
 export function useSubscription<T extends { id: any }>(
   tableName: string,
-  filter?: EqFilter
+  filter?: EqFilter | typeof DONT_QUERY
 ): T[] {
   const [items, setItems] = useState<T[]>([]);
 
   useEffect(() => {
+    if (filter === DONT_QUERY) {
+      return;
+    }
+
     let initialQuery = supabase.from(tableName).select();
 
     if (filter) {
@@ -107,4 +115,53 @@ export function useSubscription<T extends { id: any }>(
   }, [filter, tableName]);
 
   return items;
+}
+
+export function useWorlds() {
+  const [worlds, setWorlds] = useState<WorldRow[]>([]);
+  const [error, setError] = useState<unknown | null>(null);
+
+  useEffect(() => {
+    function onFulfilled({ data }: PostgrestSingleResponse<WorldRow[]>) {
+      if (data) {
+        setWorlds(data);
+        setError(null);
+      }
+    }
+
+    function onRejected(err: unknown) {
+      setError(err);
+    }
+
+    supabase.from("World").select().then(onFulfilled, onRejected);
+  }, []);
+
+  return [worlds, error] as const;
+}
+
+export function useWorld(worldSlug: string) {
+  const [world, setWorld] = useState<WorldRow | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
+
+  useEffect(() => {
+    function onFulfilled({ data }: PostgrestSingleResponse<WorldRow | null>) {
+      if (data) {
+        setWorld(data);
+        setError(null);
+      }
+    }
+
+    function onRejected(err: unknown) {
+      setError(err);
+    }
+
+    supabase
+      .from("World")
+      .select()
+      .eq("slug", worldSlug)
+      .maybeSingle()
+      .then(onFulfilled, onRejected);
+  }, [worldSlug]);
+
+  return [world, error] as const;
 }

@@ -1,14 +1,16 @@
 import React, { useEffect, useRef } from "react";
 import { FeatureRow } from "./types";
 import pinImage from "./assets/custom.pin.png";
-// @ts-ignore
-import Unmined from "./Unmined.js";
+import { useRoute } from "wouter";
+import Unmined from "./Unmined";
+
 interface MapProps {
   features: FeatureRow[];
+  mapBase: string;
 }
 
-const MAP_BASE =
-  "https://j-minecraft-maps.s3.eu-west-1.amazonaws.com/unmined/joshcraft/overworld/";
+// const MAP_BASE =
+//   "https://j-minecraft-maps.s3.eu-west-1.amazonaws.com/unmined/joshcraft/overworld/";
 
 async function loadFromScript(
   url: string,
@@ -30,7 +32,7 @@ async function loadFromScript(
   return fn();
 }
 
-const Map: React.FC<MapProps> = ({ features }) => {
+const Map: React.FC<MapProps> = ({ features, mapBase }) => {
   const ranRef = useRef<true | null>();
   useEffect(() => {
     // if (ranRef.current) {
@@ -54,12 +56,12 @@ const Map: React.FC<MapProps> = ({ features }) => {
       console.log("creating map");
 
       const properties = await loadFromScript(
-        `${MAP_BASE}unmined.map.properties.js`,
+        `${mapBase}unmined.map.properties.js`,
         "UnminedMapProperties"
       );
 
       const regions = await loadFromScript(
-        `${MAP_BASE}unmined.map.regions.js`,
+        `${mapBase}unmined.map.regions.js`,
         "UnminedRegions"
       );
 
@@ -103,13 +105,7 @@ const Map: React.FC<MapProps> = ({ features }) => {
 
       clearMapEl();
       let unmined = new Unmined();
-      unmined.map(mapElId, properties, regions, MAP_BASE);
-
-      console.log({
-        properties,
-        regions,
-        Unmined,
-      });
+      unmined.map(mapElId, properties, regions, mapBase);
     }
 
     run();
@@ -121,8 +117,7 @@ const Map: React.FC<MapProps> = ({ features }) => {
 
   return (
     <div>
-      <h3>Map</h3>
-      <div id="map" style={{ width: 800, height: 700 }}></div>
+      <div id="map" style={{ width: "100%", height: 700 }}></div>
     </div>
   );
 };

@@ -33,7 +33,7 @@ const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
         onNewFeature({
           name,
           world: world.id,
-          dimension: parseInt(dimension),
+          dimension: dimension,
           icon,
           pos_x: parseInt(posX),
           pos_y: parseInt(posY),
@@ -48,7 +48,16 @@ const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
       <table>
         <tbody>
           <FieldRow label="Name" fieldName="name" type="text" />
-          <FieldRow label="Dimension" fieldName="dimension" type="number" />
+          <tr>
+            <td>Dimension</td>
+            <td>
+              <select name="dimension">
+                <option value="overworld">Overworld</option>
+                <option value="nether">Nether</option>
+                <option value="end">The End</option>
+              </select>
+            </td>
+          </tr>
           <FieldRow label="Icon" fieldName="icon" type="text" />
           <FieldRow label="Pos X" fieldName="pos_x" type="text" />
           <FieldRow label="Pos Y" fieldName="pos_y" type="text" />
