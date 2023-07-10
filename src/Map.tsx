@@ -71,6 +71,12 @@ const Map: React.FC<MapProps> = ({ features }) => {
           image: pinImage,
           imageAnchor: [0.5, 1],
           imageScale: 0.5,
+
+          text: feature.name,
+          textColor: "white",
+          offsetX: 0,
+          offsetY: 20,
+          font: "bold 16px monospace,sans serif",
         };
       });
 
