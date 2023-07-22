@@ -1,7 +1,9 @@
 import React, { useCallback } from "react";
 import { NewFeatureRow, WorldRow } from "./types";
+import { Coordinate } from "ol/coordinate";
 
 interface NewFeatureFormProps {
+  initialCoordiantes?: Coordinate;
   onNewFeature: (newFeature: NewFeatureRow) => void;
   world: WorldRow;
 }
@@ -16,6 +18,7 @@ function getFormValue(formData: FormData, fieldName: string) {
 }
 
 const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
+  initialCoordiantes,
   onNewFeature,
   world,
 }) => {
@@ -43,6 +46,9 @@ const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
     [onNewFeature, world.id]
   );
 
+  const [initialPosX, initialPosY] = initialCoordiantes ?? [];
+  console.log({ initialPosX, initialPosY });
+
   return (
     <form onSubmit={handleSubmit}>
       <table>
@@ -59,8 +65,18 @@ const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
             </td>
           </tr>
           <FieldRow label="Icon" fieldName="icon" type="text" />
-          <FieldRow label="Pos X" fieldName="pos_x" type="text" />
-          <FieldRow label="Pos Y" fieldName="pos_y" type="text" />
+          <FieldRow
+            label="Pos X"
+            fieldName="pos_x"
+            type="text"
+            initialValue={initialPosX}
+          />
+          <FieldRow
+            label="Pos Y"
+            fieldName="pos_y"
+            type="text"
+            initialValue={initialPosY}
+          />
           <tr>
             <td>
               <button type="submit">Save</button>
@@ -78,14 +94,30 @@ interface FieldRowProps {
   label: string;
   fieldName: string;
   type: string;
+  initialValue?: number | string;
 }
 
-const FieldRow: React.FC<FieldRowProps> = ({ label, fieldName, type }) => {
+const FieldRow: React.FC<FieldRowProps> = ({
+  label,
+  fieldName,
+  type,
+  initialValue,
+}) => {
+  const handleRef = (ref: HTMLInputElement) => {
+    console.log(ref, initialValue);
+    if (ref && initialValue) {
+      ref.value =
+        typeof initialValue === "string"
+          ? initialValue
+          : initialValue.toString();
+    }
+  };
+
   return (
     <tr>
       <td>{label}</td>
       <td>
-        <input name={fieldName} type={type} required />
+        <input name={fieldName} type={type} required ref={handleRef} />
       </td>
     </tr>
   );

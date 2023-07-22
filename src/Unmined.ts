@@ -1,3 +1,27 @@
+import OpenLayersMap from "ol/Map";
+import View from "ol/View";
+import Feature from "ol/Feature";
+import {
+  Projection,
+  addCoordinateTransforms,
+  transform as projTransform,
+} from "ol/proj";
+import Point from "ol/geom/Point";
+import { boundingExtent } from "ol/extent";
+import TileGrid from "ol/tilegrid/TileGrid";
+import Tile from "ol/layer/Tile";
+import LayerVector from "ol/layer/Vector";
+import SourceVector from "ol/source/Vector";
+import XYZ from "ol/source/XYZ";
+import { Coordinate, createStringXY } from "ol/coordinate";
+import { MousePosition, defaults as controlDefaults } from "ol/control";
+import { Text, Stroke, Fill, Style, Icon } from "ol/style";
+import "ol/ol.css";
+import "ol-contextmenu/ol-contextmenu.css";
+import Geometry from "ol/geom/Geometry";
+import ContextMenu from "ol-contextmenu";
+import pinImage from "./assets/custom.pin.png";
+
 interface UnminedOptions {
   minRegionX: number;
   minRegionZ: number;
@@ -10,34 +34,43 @@ interface UnminedOptions {
   background?: string;
 }
 
-interface UnminedMarker {
+interface MarkerText {
+  text: string;
+  color: string;
+  font: string;
+  strokeColor: string;
+
+  offsetX: number;
+  offsetY: number;
+}
+
+export interface UnminedMarker {
+  id: number;
+
   x: number;
   z: number;
+
+  label?: MarkerText;
+  subtitle?: MarkerText;
+
   image: string;
   imageAnchor: [number, number];
   imageScale: number;
-  text: string;
-  textColor: string;
-  offsetX: number;
-  offsetY: number;
-  font: string;
-  strokeColor: string;
 }
 
-// TODO: import OpenLayers properly
-declare var ol: any;
-
 export default class Unmined {
-  dataProjection: any;
-  viewProjection: any;
-  markersLayer: any;
-  openlayersMap: any;
+  dataProjection!: Projection;
+  viewProjection!: Projection;
+  openlayersMap!: OpenLayersMap;
+  vectorSource!: SourceVector<Geometry>;
+  vectorLayer!: LayerVector<any>;
 
   map(
     mapId: string,
     options: UnminedOptions,
     regions: any,
-    tileURLBase: string
+    tileURLBase: string,
+    requestCreatePin: (coords: Coordinate) => void
   ) {
     const dpiScale = window.devicePixelRatio ?? 1.0;
 
@@ -51,7 +84,7 @@ export default class Unmined {
     const worldMaxZoomFactor = Math.pow(2, options.maxZoom);
 
     // left, bottom, right, top, Y is negated
-    var mapExtent = ol.extent.boundingExtent([
+    var mapExtent = boundingExtent([
       [
         worldMinX * worldMaxZoomFactor,
         -(worldMinY + worldHeight) * worldMaxZoomFactor,
@@ -62,12 +95,12 @@ export default class Unmined {
       ],
     ]);
 
-    var viewProjection = new ol.proj.Projection({
+    var viewProjection = new Projection({
       code: "VIEW",
       units: "pixels",
     });
 
-    var dataProjection = new ol.proj.Projection({
+    var dataProjection = new Projection({
       code: "DATA",
       units: "pixels",
     });
@@ -76,7 +109,7 @@ export default class Unmined {
 
     // Coordinate transformation between view and data
     // OpenLayers Y is positive up, world Y is positive down
-    ol.proj.addCoordinateTransforms(
+    addCoordinateTransforms(
       viewProjection,
       dataProjection,
       function (coordinate: any) {
@@ -95,15 +128,15 @@ export default class Unmined {
         (Math.pow(2, z) * dpiScale) / worldMaxZoomFactor;
     }
 
-    var tileGrid = new ol.tilegrid.TileGrid({
+    var tileGrid = new TileGrid({
       extent: mapExtent,
       origin: [0, 0],
       resolutions: resolutions,
       tileSize: worldTileSize / dpiScale,
     });
 
-    var unminedLayer = new ol.layer.Tile({
-      source: new ol.source.XYZ({
+    var unminedLayer = new Tile({
+      source: new XYZ({
         projection: viewProjection,
         tileGrid: tileGrid,
         tilePixelRatio: dpiScale,
@@ -198,24 +231,16 @@ export default class Unmined {
       }),
     });
 
-    var mousePositionControl = new ol.control.MousePosition({
-      coordinateFormat: ol.coordinate.createStringXY(0),
+    var mousePositionControl = new MousePosition({
+      coordinateFormat: createStringXY(0),
       projection: dataProjection,
     });
 
-    var map = new ol.Map({
+    var map = new OpenLayersMap({
       target: mapId,
-      controls: ol.control.defaults().extend([mousePositionControl]),
-      layers: [
-        unminedLayer,
-        // new ol.layer.Tile({
-        //   source: new ol.source.TileDebug({
-        //     tileGrid: unminedTileGrid,
-        //     projection: viewProjection,
-        //   }),
-        // }),
-      ],
-      view: new ol.View({
+      controls: controlDefaults().extend([mousePositionControl]),
+      layers: [unminedLayer],
+      view: new View({
         center: [0, 0],
         extent: mapExtent,
         projection: viewProjection,
@@ -231,7 +256,6 @@ export default class Unmined {
     if (options.markers) {
       var markersLayer = this.createMarkersLayer(options.markers);
       map.addLayer(markersLayer);
-      this.markersLayer = markersLayer;
     }
 
     if (options.background) {
@@ -240,16 +264,89 @@ export default class Unmined {
     }
 
     this.openlayersMap = map;
+
+    const contextmenu = new ContextMenu({
+      width: 170,
+      defaultItems: true, // defaultItems are (for now) Zoom In/Zoom Out
+      items: [
+        {
+          text: "Add a Marker",
+          classname: "some-style-class", // you can add this icon with a CSS class
+          // instead of `icon` property (see next line)
+          icon: pinImage, // this can be relative or absolute
+          callback: (ev) => {
+            const mcCoords = projTransform(
+              ev.coordinate,
+              this.viewProjection,
+              this.dataProjection
+            );
+
+            requestCreatePin(mcCoords);
+          },
+        },
+        "-", // this is a separator
+      ],
+    });
+    map.addControl(contextmenu);
   }
 
-  existingMarkers = [];
+  createText(text: MarkerText) {
+    return new Text({
+      text: text.text,
+      font: text.font,
+      offsetX: text.offsetX,
+      offsetY: text.offsetY,
+      stroke: new Stroke({
+        color: text.strokeColor,
+        width: 2,
+      }),
+      fill: new Fill({
+        color: text.color,
+      }),
+    });
+  }
+
+  existingMarkers: Map<
+    UnminedMarker["id"],
+    [UnminedMarker, Feature<Point> /* Feature */]
+  > = new Map();
+
+  createMarkersLayer(markers: UnminedMarker[]) {
+    this.vectorSource = new SourceVector({
+      features: [],
+    });
+
+    this.vectorLayer = new LayerVector({
+      source: this.vectorSource,
+    });
+
+    for (const item of markers) {
+      this.addMarker(item);
+    }
+
+    return this.vectorLayer;
+  }
+
+  addMarker(marker: UnminedMarker) {
+    if (this.existingMarkers.has(marker.id)) {
+      const [, feature] = this.existingMarkers.get(marker.id) ?? [];
+      if (!feature) return;
+
+      this.vectorSource.removeFeature(feature);
+    }
+
+    const feature = this.createMarkerFeature(marker);
+    this.existingMarkers.set(marker.id, [marker, feature]);
+    this.vectorSource.addFeature(feature);
+  }
+
   createMarkerFeature(item: UnminedMarker) {
     var longitude = item.x;
     var latitude = item.z;
 
-    var feature = new ol.Feature({
-      geometry: new ol.geom.Point(
-        ol.proj.transform(
+    var feature = new Feature({
+      geometry: new Point(
+        projTransform(
           [longitude, latitude],
           this.dataProjection,
           this.viewProjection
@@ -257,53 +354,24 @@ export default class Unmined {
       ),
     });
 
-    var style = new ol.style.Style();
-    if (item.image)
+    var style = new Style();
+    if (item.image) {
       style.setImage(
-        new ol.style.Icon({
+        new Icon({
           src: item.image,
           anchor: item.imageAnchor,
           scale: item.imageScale,
         })
       );
-
-    if (item.text)
-      style.setText(
-        new ol.style.Text({
-          text: item.text,
-          font: item.font,
-          offsetX: item.offsetX,
-          offsetY: item.offsetY,
-          stroke: new ol.style.Stroke({
-            color: item.strokeColor,
-            width: 2,
-          }),
-          fill: new ol.style.Fill({
-            color: item.textColor,
-          }),
-        })
-      );
-
-    feature.setStyle(style);
-    return feature;
-  }
-
-  createMarkersLayer(markers: UnminedMarker[]) {
-    var features = [];
-
-    for (var i = 0; i < markers.length; i++) {
-      var item = markers[i];
-      var feature = this.createMarkerFeature(item);
-      features.push(feature);
     }
 
-    var vectorSource = new ol.source.Vector({
-      features: features,
-    });
+    if (item.label) {
+      const text = this.createText(item.label);
+      style.setText(text);
+    }
 
-    var vectorLayer = new ol.layer.Vector({
-      source: vectorSource,
-    });
-    return vectorLayer;
+    feature.setStyle(style);
+
+    return feature;
   }
 }

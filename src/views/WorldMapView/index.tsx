@@ -17,6 +17,22 @@ interface WorldMapViewProps {
   };
 }
 
+function getOtherDimFeatures(allFeatures: FeatureRow[], thisDimension: string) {
+  if (thisDimension === "nether") {
+    const overworldFeatures = allFeatures
+      .filter((f) => f.dimension === "overworld")
+      .map((v) => ({
+        ...v,
+        pos_x: (v.pos_x ?? 0) / 8,
+        pos_y: (v.pos_y ?? 0) / 8,
+      }));
+
+    return overworldFeatures;
+  }
+
+  return [];
+}
+
 export default function WorldMapView({
   params: { worldSlug, dimensionSlug },
 }: WorldMapViewProps) {
@@ -29,7 +45,13 @@ export default function WorldMapView({
   const [addPinError, setAddPinError] = useState<string | null>();
 
   const features = useMemo(() => {
-    return allFeatures.filter((f) => f.dimension === dimensionSlug);
+    const thisDimFeatures = allFeatures.filter(
+      (f) => f.dimension === dimensionSlug
+    );
+
+    const otherDimFeatures = getOtherDimFeatures(allFeatures, dimensionSlug);
+
+    return [...thisDimFeatures, ...otherDimFeatures];
   }, [allFeatures, dimensionSlug]);
 
   const handleNewFeature = useCallback((newFeature: NewFeatureRow) => {
@@ -69,6 +91,15 @@ export default function WorldMapView({
         {" / "}
         <Link href={`/${worldSlug}/end`}>The End</Link>
       </p>
+
+      <h3>Map</h3>
+      <Map
+        features={features}
+        mapBase={mapBaseUrl}
+        onNewFeature={handleNewFeature}
+        world={world}
+      />
+
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
         <div>
           <h3>
@@ -111,8 +142,6 @@ export default function WorldMapView({
           {addPinError && <p>{addPinError}</p>}
         </div>
       </div>
-      <h3>Map</h3>
-      <Map features={features} mapBase={mapBaseUrl} />
     </div>
   );
 }
