@@ -50,7 +50,7 @@ function getOtherDimFeatures(allFeatures: FeatureRow[], thisDimension: string) {
 export default function WorldMapView({
   params: { worldSlug, dimensionSlug },
 }: WorldMapViewProps) {
-  const { session, isLoaded } = useAuth();
+  const { session } = useAuth();
   const [world, worldError] = useWorld(worldSlug);
   const features = useDimensionFeatures(world, dimensionSlug);
 

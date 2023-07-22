@@ -108,74 +108,8 @@ const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
           </Button>
         </Flex>
       </VStack>
-
-      {/* <table>
-        <tbody>
-          <FieldRow label="Name" fieldName="name" type="text" />
-          <tr>
-            <td>Dimension</td>
-            <td>
-              <select name="dimension" ref={handleSelectRef}>
-                <option value="overworld">Overworld</option>
-                <option value="nether">Nether</option>
-                <option value="end">The End</option>
-              </select>
-            </td>
-          </tr>
-          <FieldRow label="Icon" fieldName="icon" type="text" />
-          <FieldRow
-            label="Pos X"
-            fieldName="pos_x"
-            type="text"
-            initialValue={initialValues?.pos_x ?? undefined}
-          />
-          <FieldRow
-            label="Pos Y"
-            fieldName="pos_z"
-            type="text"
-            initialValue={initialValues?.pos_z ?? undefined}
-          />
-          <tr>
-            <td>
-              <button type="submit">Save</button>
-            </td>
-          </tr>
-        </tbody>
-      </table> */}
     </form>
   );
 };
 
 export default NewFeatureForm;
-
-interface FieldRowProps {
-  label: string;
-  fieldName: string;
-  type: string;
-  initialValue?: number | string;
-}
-
-const FieldRow: React.FC<FieldRowProps> = ({
-  label,
-  fieldName,
-  type,
-  initialValue,
-}) => {
-  const handleRef = (ref: HTMLInputElement) => {
-    if (ref && initialValue !== undefined && initialValue !== null) {
-      ref.value =
-        typeof initialValue === "string"
-          ? initialValue
-          : initialValue.toString();
-    }
-  };
-
-  return (
-    <tr>
-      <td>{label}</td>
-      <td>
-        <input name={fieldName} type={type} required ref={handleRef} />
-      </td>
-    </tr>
-  );
-};
