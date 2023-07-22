@@ -67,6 +67,24 @@ const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
     [initialValues?.dimension]
   );
 
+  const handlePosXRef = useCallback(
+    (ref: HTMLInputElement) => {
+      if (ref && initialValues?.pos_x != undefined) {
+        ref.value = initialValues.pos_x.toString();
+      }
+    },
+    [initialValues]
+  );
+
+  const handlePosZRef = useCallback(
+    (ref: HTMLInputElement) => {
+      if (ref && initialValues?.pos_z != undefined) {
+        ref.value = initialValues.pos_z.toString();
+      }
+    },
+    [initialValues]
+  );
+
   return (
     <form onSubmit={handleSubmit}>
       <VStack spacing="4" align="flex-start">
@@ -90,12 +108,12 @@ const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
         <HStack spacing="4">
           <FormControl>
             <FormLabel>X</FormLabel>
-            <Input required name="pos_x" />
+            <Input required name="pos_x" ref={handlePosXRef} />
           </FormControl>
 
           <FormControl>
             <FormLabel>Z</FormLabel>
-            <Input required name="pos_z" />
+            <Input required name="pos_z" ref={handlePosZRef} />
           </FormControl>
         </HStack>
 
