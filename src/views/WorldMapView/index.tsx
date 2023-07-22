@@ -5,11 +5,22 @@ import {
   useSubscription,
   useWorld,
 } from "../../supabaseClient";
-import { FeatureRow, NewFeatureRow } from "../../types";
-// import Map from "../../Map";
+import { FeatureRow, NewFeatureRow, WorldRow } from "../../types";
 import NewFeatureForm from "../../NewFeatureForm";
 import { Link } from "wouter";
 import React from "react";
+
+import s from "./styles.module.css";
+import { Coordinate } from "ol/coordinate";
+import {
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
+  Heading,
+} from "@chakra-ui/react";
+import { useAuth } from "../../AuthProvider";
+import Auth from "../../Auth";
 
 const Map = React.lazy(() => import("../../Map"));
 
@@ -24,10 +35,10 @@ function getOtherDimFeatures(allFeatures: FeatureRow[], thisDimension: string) {
   if (thisDimension === "nether") {
     const overworldFeatures = allFeatures
       .filter((f) => f.dimension === "overworld")
-      .map((v) => ({
-        ...v,
-        pos_x: (v.pos_x ?? 0) / 8,
-        pos_y: (v.pos_y ?? 0) / 8,
+      .map((f) => ({
+        ...f,
+        pos_x: (f.pos_x ?? 0) / 8,
+        pos_z: (f.pos_z ?? 0) / 8,
       }));
 
     return overworldFeatures;
@@ -39,23 +50,15 @@ function getOtherDimFeatures(allFeatures: FeatureRow[], thisDimension: string) {
 export default function WorldMapView({
   params: { worldSlug, dimensionSlug },
 }: WorldMapViewProps) {
+  const { session, isLoaded } = useAuth();
   const [world, worldError] = useWorld(worldSlug);
-  const featuresFilter = useMemo(
-    () => (world ? { column: "world", value: world.id } : DONT_QUERY),
-    [world]
-  );
-  const allFeatures = useSubscription<FeatureRow>("Feature", featuresFilter);
+  const features = useDimensionFeatures(world, dimensionSlug);
+
+  const [newFeatureInitialValues, setNewFeatureInitialValues] = useState<
+    Partial<NewFeatureRow>
+  >({});
+  const [isCreatingFeature, setIsCreatingFeature] = useState(false);
   const [addPinError, setAddPinError] = useState<string | null>();
-
-  const features = useMemo(() => {
-    const thisDimFeatures = allFeatures.filter(
-      (f) => f.dimension === dimensionSlug
-    );
-
-    const otherDimFeatures = getOtherDimFeatures(allFeatures, dimensionSlug);
-
-    return [...thisDimFeatures, ...otherDimFeatures];
-  }, [allFeatures, dimensionSlug]);
 
   const handleNewFeature = useCallback((newFeature: NewFeatureRow) => {
     supabase
@@ -64,12 +67,28 @@ export default function WorldMapView({
       .then(
         () => {},
         (error) => {
+          console.log("error making pin", error);
+
           const errorMessage =
             error?.message || error?.toString?.() || error || "Unknown error";
+
           setAddPinError(errorMessage);
         }
       );
   }, []);
+
+  const handleStartCreatingFeature = useCallback(
+    ([posX, posZ]: Coordinate) => {
+      setIsCreatingFeature(true);
+      setNewFeatureInitialValues((v) => ({
+        ...v,
+        dimension: dimensionSlug,
+        pos_x: posX,
+        pos_z: posZ,
+      }));
+    },
+    [dimensionSlug]
+  );
 
   if (worldError) {
     return <div>error loading world.</div>;
@@ -82,69 +101,69 @@ export default function WorldMapView({
   const mapBaseUrl = world.map_base_url + dimensionSlug + "/";
 
   return (
-    <div>
-      <h2>{world.name}</h2>
-      <p>
-        <Link to="/">Home</Link>
-      </p>
-      <p>
+    <div className={s.root}>
+      <div className={s.header}>
+        <Heading size="md">{world.name}</Heading>
+
         <Link href={`/${worldSlug}/overworld`}>Overworld</Link>
-        {" / "}
         <Link href={`/${worldSlug}/nether`}>Nether</Link>
-        {" / "}
         <Link href={`/${worldSlug}/end`}>The End</Link>
-      </p>
 
-      <h3>Map</h3>
-      <Map
-        features={features}
-        mapBase={mapBaseUrl}
-        onNewFeature={handleNewFeature}
-        world={world}
-      />
+        <div className={s.flexGrow} />
 
-      <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
-        <div>
-          <h3>
-            Features for {world.slug}/{dimensionSlug}
-          </h3>
-          <table>
-            <thead>
-              <tr>
-                <td>created_at</td>
-                <td>cross_dimension</td>
-                <td>dimension</td>
-                <td>icon</td>
-                <td>name</td>
-                <td>pos_x</td>
-                <td>pos_y</td>
-                <td>world</td>
-              </tr>
-            </thead>
-
-            <tbody>
-              {features.map((feature) => (
-                <tr key={feature.id}>
-                  <td>{new Date(feature.created_at ?? "").toLocaleString()}</td>
-                  <td>{feature.cross_dimension ? "true" : "false"}</td>
-                  <td>{feature.dimension}</td>
-                  <td>{feature.icon}</td>
-                  <td>{feature.name}</td>
-                  <td>{feature.pos_x}</td>
-                  <td>{feature.pos_y}</td>
-                  <td>{feature.world}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div>
-          <h3>Add pin</h3>
-          <NewFeatureForm world={world} onNewFeature={handleNewFeature} />
-          {addPinError && <p>{addPinError}</p>}
-        </div>
+        <Link href={`/`}>Home</Link>
       </div>
+
+      <div className={s.map}>
+        <div className={s.mapShadows} />
+        <Map
+          features={features}
+          mapBase={mapBaseUrl}
+          requestNewFeature={handleStartCreatingFeature}
+        />
+      </div>
+
+      {(isCreatingFeature || addPinError) && (
+        <div className={s.drawer}>
+          {session ? (
+            <NewFeatureForm
+              world={world}
+              initialValues={newFeatureInitialValues}
+              onNewFeature={handleNewFeature}
+              onCancel={() => setIsCreatingFeature(false)}
+            />
+          ) : (
+            <Auth />
+          )}
+
+          {addPinError && (
+            <Alert status="error">
+              <AlertIcon />
+              <AlertTitle>Error creating pin</AlertTitle>
+              <AlertDescription>{addPinError}</AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
     </div>
   );
+}
+
+function useDimensionFeatures(world: WorldRow | null, dimensionSlug: string) {
+  const featuresFilter = useMemo(
+    () => (world ? { column: "world", value: world.id } : DONT_QUERY),
+    [world]
+  );
+  const allFeatures = useSubscription<FeatureRow>("Feature", featuresFilter);
+  const features = useMemo(() => {
+    const thisDimFeatures = allFeatures.filter(
+      (f) => f.dimension === dimensionSlug
+    );
+
+    const otherDimFeatures = getOtherDimFeatures(allFeatures, dimensionSlug);
+
+    return [...thisDimFeatures, ...otherDimFeatures];
+  }, [allFeatures, dimensionSlug]);
+
+  return features;
 }

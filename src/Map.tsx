@@ -1,20 +1,15 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { FeatureRow, NewFeatureRow, WorldRow } from "./types";
+import React, { useCallback, useEffect, useRef } from "react";
+import { FeatureRow } from "./types";
 import pinImage from "./assets/custom.pin.png";
 import Unmined, { UnminedMarker } from "./Unmined";
 import { Coordinate } from "ol/coordinate";
-import NewFeatureForm from "./NewFeatureForm";
 import s from "./Map.module.css";
 
 interface MapProps {
-  world: WorldRow;
   features: FeatureRow[];
   mapBase: string;
-  onNewFeature: (newFeature: NewFeatureRow) => void;
+  requestNewFeature: (coordinates: Coordinate) => void;
 }
-
-// const MAP_BASE =
-//   "https://j-minecraft-maps.s3.eu-west-1.amazonaws.com/unmined/joshcraft/overworld/";
 
 async function loadFromScript(
   url: string,
@@ -40,7 +35,7 @@ function mapFeature(feature: FeatureRow): UnminedMarker {
   return {
     id: feature.id,
     x: feature.pos_x ?? 0,
-    z: feature.pos_y ?? 0,
+    z: feature.pos_z ?? 0,
 
     label: {
       text: feature.name,
@@ -58,32 +53,15 @@ function mapFeature(feature: FeatureRow): UnminedMarker {
   };
 }
 
-const Map: React.FC<MapProps> = ({
-  features,
-  mapBase,
-  world,
-  onNewFeature,
-}) => {
-  const [isCreatingFeature, setIsCreatingFeature] = useState(false);
-  const [newFeatureCoords, setNewFeatureCoords] = useState<Coordinate | null>(
-    null
-  );
+const Map: React.FC<MapProps> = ({ features, mapBase, requestNewFeature }) => {
   const unminedRef = useRef<Unmined | null>();
 
-  const handleCreateCoordinate = useCallback((coords: Coordinate) => {
-    const [posX, posY] = coords;
-
-    setIsCreatingFeature(true);
-    setNewFeatureCoords([Math.round(posX), Math.round(posY)]);
-  }, []);
-
-  const handleNewFeature = useCallback(
-    (newFeature: NewFeatureRow) => {
-      onNewFeature(newFeature);
-      setNewFeatureCoords(null);
-      setIsCreatingFeature(false);
+  const handleCreateCoordinate = useCallback(
+    (coords: Coordinate) => {
+      const [posX, posZ] = coords;
+      requestNewFeature([Math.round(posX), Math.round(posZ)]);
     },
-    [onNewFeature]
+    [requestNewFeature]
   );
 
   useEffect(() => {
@@ -158,29 +136,7 @@ const Map: React.FC<MapProps> = ({
     }
   }, [features]);
 
-  return (
-    <div className={s.wrapper}>
-      <div id="map" style={{ width: "100%", height: 700 }}></div>
-
-      {/* <CreateFeatureModal
-        isOpen={modalIsOpen}
-        onRequestClose={() => setModalIsOpen(false)}
-      /> */}
-
-      {isCreatingFeature && (
-        <div>
-          <NewFeatureForm
-            world={world}
-            onNewFeature={handleNewFeature}
-            initialCoordiantes={newFeatureCoords ?? undefined}
-          />
-          <button type="button" onClick={() => setIsCreatingFeature(false)}>
-            Cancel
-          </button>
-        </div>
-      )}
-    </div>
-  );
+  return <div id="map" className={s.map}></div>;
 };
 
 export default Map;

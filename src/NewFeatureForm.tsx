@@ -1,11 +1,22 @@
 import React, { useCallback } from "react";
 import { NewFeatureRow, WorldRow } from "./types";
-import { Coordinate } from "ol/coordinate";
+import {
+  Button,
+  Flex,
+  FormControl,
+  FormLabel,
+  HStack,
+  Heading,
+  Input,
+  Select,
+  VStack,
+} from "@chakra-ui/react";
 
 interface NewFeatureFormProps {
-  initialCoordiantes?: Coordinate;
-  onNewFeature: (newFeature: NewFeatureRow) => void;
   world: WorldRow;
+  initialValues?: Partial<NewFeatureRow>;
+  onNewFeature: (newFeature: NewFeatureRow) => void;
+  onCancel: () => void;
 }
 
 function getFormValue(formData: FormData, fieldName: string) {
@@ -18,9 +29,10 @@ function getFormValue(formData: FormData, fieldName: string) {
 }
 
 const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
-  initialCoordiantes,
-  onNewFeature,
   world,
+  initialValues,
+  onNewFeature,
+  onCancel,
 }) => {
   const handleSubmit = useCallback(
     (ev: React.FormEvent<HTMLFormElement>) => {
@@ -28,34 +40,82 @@ const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
       const formData = new FormData(ev.currentTarget);
       const name = getFormValue(formData, "name");
       const dimension = getFormValue(formData, "dimension");
-      const icon = getFormValue(formData, "icon");
+      const icon = "pin";
       const posX = getFormValue(formData, "pos_x");
-      const posY = getFormValue(formData, "pos_y");
+      const posZ = getFormValue(formData, "pos_z");
 
-      if (name && dimension && icon && posX && posY) {
+      if (name && dimension && icon && posX && posZ) {
         onNewFeature({
           name,
           world: world.id,
           dimension: dimension,
           icon,
           pos_x: parseInt(posX),
-          pos_y: parseInt(posY),
+          pos_z: parseInt(posZ),
         });
       }
     },
     [onNewFeature, world.id]
   );
 
-  const [initialPosX, initialPosY] = initialCoordiantes ?? [];
+  const handleSelectRef = useCallback(
+    (ref: HTMLSelectElement) => {
+      if (ref && initialValues?.dimension) {
+        ref.value = initialValues.dimension;
+      }
+    },
+    [initialValues?.dimension]
+  );
+
   return (
     <form onSubmit={handleSubmit}>
-      <table>
+      <VStack spacing="4" align="flex-start">
+        <Heading size="md">New Pin</Heading>
+
+        <FormControl>
+          <FormLabel>Name</FormLabel>
+          <Input required name="name" />
+        </FormControl>
+
+        <FormControl>
+          <FormLabel>Dimension</FormLabel>
+
+          <Select required name="dimension" ref={handleSelectRef}>
+            <option value="overworld">Overworld</option>
+            <option value="nether">Nether</option>
+            <option value="end">The End</option>
+          </Select>
+        </FormControl>
+
+        <HStack spacing="4">
+          <FormControl>
+            <FormLabel>X</FormLabel>
+            <Input required name="pos_x" />
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Z</FormLabel>
+            <Input required name="pos_z" />
+          </FormControl>
+        </HStack>
+
+        <Flex width="100%" justify="space-between">
+          <Button type="submit" colorScheme="green">
+            Save
+          </Button>
+          <Button onClick={onCancel} colorScheme="orange" variant="outline">
+            Cancel
+          </Button>
+        </Flex>
+      </VStack>
+
+      {/* <table>
         <tbody>
           <FieldRow label="Name" fieldName="name" type="text" />
           <tr>
             <td>Dimension</td>
             <td>
-              <select name="dimension">
+              <select name="dimension" ref={handleSelectRef}>
                 <option value="overworld">Overworld</option>
                 <option value="nether">Nether</option>
                 <option value="end">The End</option>
@@ -67,13 +127,13 @@ const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
             label="Pos X"
             fieldName="pos_x"
             type="text"
-            initialValue={initialPosX}
+            initialValue={initialValues?.pos_x ?? undefined}
           />
           <FieldRow
             label="Pos Y"
-            fieldName="pos_y"
+            fieldName="pos_z"
             type="text"
-            initialValue={initialPosY}
+            initialValue={initialValues?.pos_z ?? undefined}
           />
           <tr>
             <td>
@@ -81,7 +141,7 @@ const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
             </td>
           </tr>
         </tbody>
-      </table>
+      </table> */}
     </form>
   );
 };
@@ -102,7 +162,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
   initialValue,
 }) => {
   const handleRef = (ref: HTMLInputElement) => {
-    if (ref && initialValue) {
+    if (ref && initialValue !== undefined && initialValue !== null) {
       ref.value =
         typeof initialValue === "string"
           ? initialValue
