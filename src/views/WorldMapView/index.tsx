@@ -6,9 +6,12 @@ import {
   useWorld,
 } from "../../supabaseClient";
 import { FeatureRow, NewFeatureRow } from "../../types";
-import Map from "../../Map";
+// import Map from "../../Map";
 import NewFeatureForm from "../../NewFeatureForm";
 import { Link } from "wouter";
+import React from "react";
+
+const Map = React.lazy(() => import("../../Map"));
 
 interface WorldMapViewProps {
   params: {

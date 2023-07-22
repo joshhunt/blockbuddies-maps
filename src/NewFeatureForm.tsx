@@ -47,8 +47,6 @@ const NewFeatureForm: React.FC<NewFeatureFormProps> = ({
   );
 
   const [initialPosX, initialPosY] = initialCoordiantes ?? [];
-  console.log({ initialPosX, initialPosY });
-
   return (
     <form onSubmit={handleSubmit}>
       <table>
@@ -104,7 +102,6 @@ const FieldRow: React.FC<FieldRowProps> = ({
   initialValue,
 }) => {
   const handleRef = (ref: HTMLInputElement) => {
-    console.log(ref, initialValue);
     if (ref && initialValue) {
       ref.value =
         typeof initialValue === "string"
